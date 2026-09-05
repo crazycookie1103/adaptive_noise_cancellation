@@ -425,7 +425,7 @@ This allows the enhanced output to be compared directly with the clean signal.
 ---
 
 
-# TinyML 
+# TinyML (IN SO FAR this is what the crux of the chats were)(follow what fits)
 
 The TinyML model is an important part of the system.
 
@@ -507,7 +507,7 @@ Your model implementation must emit JSON messages matching this schema on every 
 
 ---
 
-## 4. Dataset Requirements & Leakage Prevention Protocol
+## YOU CAN DO THIS SUGGESTION AGAIN
 
 To train the 3-class model, gather **1,500–2,000 samples (500 ms window context)** per class (**~12.5–16.5 minutes** raw audio per class, **~50 minutes** total).
 
