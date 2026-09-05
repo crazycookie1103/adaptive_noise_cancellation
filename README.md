@@ -291,7 +291,7 @@ venv\Scripts\activate
 Install the required packages:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt or run pip install numpy scipy pyroomacoustics soundfile librosa matplotlib pystoi
 ```
 
 ---
@@ -619,13 +619,13 @@ Add more real-world vehicle noise recordings to test the system under a wider ra
 
 Possible sources include:
 
-* DEMAND Multichannel Acoustic Noise Database
+* DEMAND Multichannel Acoustic Noise Database( we have used this)
 * Freesound
 * AudioSet
 
 ## 2. Speech Dataset Expansion
 
-Additional LibriSpeech samples can be used to test the system with more speakers and different speech recordings.
+Additional LibriSpeech(used this) samples can be used to test the system with more speakers and different speech recordings.
 
 ## 3. Interactive Demo
 
