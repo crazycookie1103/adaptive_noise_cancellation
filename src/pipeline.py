@@ -13,7 +13,7 @@ def run_pipeline(primary, reference, fs):
     speech_mask = fast_energy_vad(p_clean, fs, frame_ms=10, zcr_thresh=0.25)
 
     # Stage 1: NLMS Adaptive Filter (Freeze adaptation during active speech)
-    stage1_out = run_nlms(p_clean, r_clean, adapt_mask=speech_mask, num_taps=128, mu=0.05)
+    stage1_out = run_nlms(p_clean, r_clean, adapt_mask=speech_mask, num_taps=128, mu=0.03)
 
     # Stage 3: Spectral Wiener Post-Filter (Preserve speech formants with floor_gain=0.45)
     final_out = apply_spectral_mask(stage1_out, fs, floor_gain=0.45)

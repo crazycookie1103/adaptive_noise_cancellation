@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Generated mixed audio
+data/mixed/
+
+# Generated outputs
+outputs/*.wav
+outputs/*.png
+outputs/*.csv
+
+# Python environments
+.venv/
+venv/
+env/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
