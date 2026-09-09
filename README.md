@@ -1,7 +1,7 @@
 
 # Adaptive Noise Cancellation System for Defence Applications
 
-A real-time, multi-stage **Adaptive Noise Cancellation (ANC)** system designed for defence communication and hearing-protection applications. The system combines adaptive digital signal processing with a lightweight TinyML control engine to suppress environmental noise while preserving speech intelligibility.
+A real-time, multi-stage **Adaptive Noise Cancellation (ANC)** system designed for defence communication and EV vehicles. The system combines adaptive digital signal processing with a lightweight TinyML control engine to suppress environmental noise while preserving speech intelligibility.
 
 The proposed hardware uses an **ESP32-S3** as the central processing platform, with dual I2S MEMS microphones for feedforward ANC. A future V2 configuration adds an internal error microphone for closed-loop feedback ANC using FxNLMS.
 
