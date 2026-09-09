@@ -7,7 +7,7 @@ class CompleteHardwareBoxSimulator(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("SmartAudio Tactical Hybrid AI-ANC Hardware UI Simulator")
-        self.geometry("900x820")  # Fixed: Removed space in geometry string
+        self.geometry("900x820")
         self.configure(bg="#121214")
 
         # Animation state initialization
@@ -19,28 +19,47 @@ class CompleteHardwareBoxSimulator(tk.Tk):
         self.dsp_bypass = tk.BooleanVar(value=False)
         self.battery_level = tk.IntVar(value=92)
         self.volume_level = tk.IntVar(value=65)
-        self.noise_db = tk.DoubleVar(value=118.0)
+        self.noise_db = tk.DoubleVar(value=85.0)
         
-        # Performance Evaluation Metrics (SIH Requirements)
-        self.snr_val = tk.DoubleVar(value=18.4)      # Target > 15 dB
-        self.stoi_val = tk.DoubleVar(value=0.89)     # Target > 0.85
-        self.pesq_val = tk.DoubleVar(value=2.82)     # Target > 2.5
-        self.latency_ms = tk.DoubleVar(value=3.8)    # Real-time low latency
+        # Real-World Performance Evaluation Metrics (Calibrated to Experimental ANC Results)
+        self.snr_in = tk.DoubleVar(value=-3.0)       # Input SNR (dB)
+        self.snr_gain = tk.DoubleVar(value=8.0)      # SNR Gain (+dB)
+        self.stoi_in = tk.DoubleVar(value=0.71)      # Input STOI
+        self.stoi_out = tk.DoubleVar(value=0.93)     # Enhanced Output STOI
+        self.latency_ms = tk.DoubleVar(value=3.8)    # Low Latency DSP
         
         # TinyML State
-        self.tinyml_class = tk.StringVar(value="Gunshots")
+        self.tinyml_class = tk.StringVar(value="Road Noise")
         self.tinyml_confidence = tk.IntVar(value=96)
         
-        # Tactical Environmental Scenes
+        # Acoustic Scenes & Component Configurations
         self.scenes = {
-            "Gunshots": {"db": 118.0, "class": "Gunshots", "hazard": True, "snr": 16.5, "stoi": 0.86, "pesq": 2.65},
-            "Artillery Fire": {"db": 126.0, "class": "Artillery", "hazard": True, "snr": 15.2, "stoi": 0.85, "pesq": 2.52},
-            "Helicopter Rotor": {"db": 98.0, "class": "Helicopter", "hazard": False, "snr": 19.8, "stoi": 0.91, "pesq": 2.95},
-            "Armoured Vehicle": {"db": 92.0, "class": "Armoured Veh", "hazard": False, "snr": 21.4, "stoi": 0.93, "pesq": 3.12},
-            "Emergency Siren": {"db": 95.0, "class": "Siren", "hazard": True, "snr": 18.1, "stoi": 0.88, "pesq": 2.78},
-            "Quiet Speech": {"db": 42.0, "class": "Clean Speech", "hazard": False, "snr": 24.5, "stoi": 0.96, "pesq": 3.40}
+            "Inverter Hum (Stationary)": {
+                "db": 75.0, "class": "Inverter Hum", "hazard": False, 
+                "snr_in": 3.0, "snr_gain": 3.63, "stoi_in": 0.85, "stoi_out": 0.95
+            },
+            "Road & Tire Noise": {
+                "db": 82.0, "class": "Road Noise", "hazard": False, 
+                "snr_in": 0.0, "snr_gain": 5.72, "stoi_in": 0.79, "stoi_out": 0.94
+            },
+            "Pothole Thumps (Impulse)": {
+                "db": 98.0, "class": "Impulse Thump", "hazard": True, 
+                "snr_in": -3.0, "snr_gain": 8.10, "stoi_in": 0.71, "stoi_out": 0.93
+            },
+            "Mixed (Stationary Noises)": {
+                "db": 88.0, "class": "Stationary Mix", "hazard": False, 
+                "snr_in": 0.0, "snr_gain": 5.90, "stoi_in": 0.79, "stoi_out": 0.94
+            },
+            "Mixed + Impulse Noise": {
+                "db": 105.0, "class": "Transient Mix", "hazard": True, 
+                "snr_in": -3.0, "snr_gain": 8.00, "stoi_in": 0.71, "stoi_out": 0.93
+            },
+            "Quiet Speech (Baseline)": {
+                "db": 45.0, "class": "Clean Speech", "hazard": False, 
+                "snr_in": 12.0, "snr_gain": 1.20, "stoi_in": 0.95, "stoi_out": 0.98
+            }
         }
-        self.env_scene = tk.StringVar(value="Gunshots")
+        self.env_scene = tk.StringVar(value="Mixed + Impulse Noise")
 
         # UI Overlay & Hazard State
         self.overlay_counter = 0
@@ -54,8 +73,8 @@ class CompleteHardwareBoxSimulator(tk.Tk):
         top_bar = tk.Frame(self, bg="#1a1a1e", pady=8)
         top_bar.pack(fill="x")
         
-        tk.Label(top_bar, text="Tactical Audio Test Scene:", fg="#aaaaaa", bg="#1a1a1e", font=("Helvetica", 9, "bold")).pack(side="left", padx=10)
-        scene_combo = ttk.Combobox(top_bar, textvariable=self.env_scene, values=list(self.scenes.keys()), state="readonly", width=20)
+        tk.Label(top_bar, text="Acoustic Profile Scene:", fg="#aaaaaa", bg="#1a1a1e", font=("Helvetica", 9, "bold")).pack(side="left", padx=10)
+        scene_combo = ttk.Combobox(top_bar, textvariable=self.env_scene, values=list(self.scenes.keys()), state="readonly", width=26)
         scene_combo.pack(side="left")
         scene_combo.bind("<<ComboboxSelected>>", self._on_scene_change)
 
@@ -64,8 +83,8 @@ class CompleteHardwareBoxSimulator(tk.Tk):
         self.box_frame.pack(pady=15, padx=20)
 
         # Silkscreen Branding
-        tk.Label(self.box_frame, text="SmartAudio Defence Hybrid AI-ANC Engine", fg="#888899", bg="#26262e", font=("Helvetica", 10, "bold")).pack(anchor="w")
-        tk.Label(self.box_frame, text="MODEL: SA-TML100 • SIH 2026 DEFENCE REV B", fg="#555566", bg="#26262e", font=("Helvetica", 7)).pack(anchor="w", pady=(0, 10))
+        tk.Label(self.box_frame, text="SmartAudio Active Noise Cancellation Engine", fg="#888899", bg="#26262e", font=("Helvetica", 10, "bold")).pack(anchor="w")
+        tk.Label(self.box_frame, text="MODEL: SA-ANC2026 • HYBRID DSP + TINYML", fg="#555566", bg="#26262e", font=("Helvetica", 7)).pack(anchor="w", pady=(0, 10))
 
         # Top Hardware Row: LEDs & OLED Screen
         top_row = tk.Frame(self.box_frame, bg="#26262e")
@@ -136,7 +155,7 @@ class CompleteHardwareBoxSimulator(tk.Tk):
             self.box_frame.configure(bg="#26262e")
             return
 
-        # Volume Transient Pop-up Overlay
+        # Volume Overlay
         if self.overlay_counter > 0:
             self.overlay_counter -= 1
             vol = self.volume_level.get()
@@ -154,30 +173,28 @@ class CompleteHardwareBoxSimulator(tk.Tk):
         self.oled.create_text(370, 15, text=self.anc_mode.get(), fill="#00ffcc", font=("Courier", 10, "bold"))
         self.oled.create_line(10, 28, 430, 28, fill="#00ffcc")
 
-        # --- REAL-TIME NOISE VS ANTI-WAVE CANCELATION VISUALIZER ---
+        # Real-time Waveform Phase Inversion Visualizer
         wave_center_y = 70
-        self.oled.create_text(110, 38, text="ANTI-WAVE PHASE INVERSION", fill="#888888", font=("Courier", 7))
+        self.oled.create_text(110, 38, text="ANTI-NOISE PHASE INVERSION", fill="#888888", font=("Courier", 7))
         
         for x in range(10, 220, 3):
             # Input Noise Wave (Cyan)
             noise_y = wave_center_y + int(math.sin((x + self.time_step) * 0.1) * 14)
             self.oled.create_line(x, noise_y, x + 2, noise_y, fill="#00ffcc", width=1)
             
-            # Generated Inverted Anti-Phase Wave (Red) & Cancelled Signal (White Flat Line)
+            # Anti-Phase Wave (Red) & Cancelled Signal (White Flat Line)
             if "ON" in self.anc_mode.get() and not self.dsp_bypass.get():
                 anti_y = wave_center_y - int(math.sin((x + self.time_step) * 0.1) * 14)
                 self.oled.create_line(x, anti_y, x + 2, anti_y, fill="#ff0055", width=1)
-                
-                # Flat Destructive Interference Line
                 self.oled.create_line(10, wave_center_y, 220, wave_center_y, fill="#ffffff", width=2)
 
-        # Dynamic Audio Frequency Spectrum (6 FFT Bars)
+        # Dynamic Audio Frequency Spectrum Bars
         for i in range(6):
             h = random.randint(5, int(min(55, self.noise_db.get() * 0.5)))
             x0 = 240 + (i * 15)
             self.oled.create_rectangle(x0, 105 - h, x0 + 10, 105, fill="#00ffcc", outline="")
 
-        # Real-Time Acoustic & TinyML Classification Readouts
+        # Acoustic & TinyML Classification Readouts
         db_val = self.noise_db.get()
         cls_val = self.tinyml_class.get()
         conf_val = self.tinyml_confidence.get()
@@ -189,32 +206,40 @@ class CompleteHardwareBoxSimulator(tk.Tk):
         # Divider Line
         self.oled.create_line(10, 118, 430, 118, fill="#00ffcc")
 
-        # --- REAL-TIME SIH PERFORMANCE EVALUATION METRICS ZONE ---
-        snr = self.snr_val.get() if ("ON" in self.anc_mode.get() and not self.dsp_bypass.get()) else 2.1
-        stoi = self.stoi_val.get() if ("ON" in self.anc_mode.get() and not self.dsp_bypass.get()) else 0.42
-        pesq = self.pesq_val.get() if ("ON" in self.anc_mode.get() and not self.dsp_bypass.get()) else 1.10
+        # Real-time DSP Performance Metrics (Updated from Experimental Benchmarks)
+        if "ON" in self.anc_mode.get() and not self.dsp_bypass.get():
+            snr_i = self.snr_in.get()
+            snr_g = self.snr_gain.get()
+            st_i = self.stoi_in.get()
+            st_o = self.stoi_out.get()
+        else:
+            snr_i = self.snr_in.get()
+            snr_g = 0.0
+            st_i = self.stoi_in.get()
+            st_o = self.stoi_in.get()
+
         lat = self.latency_ms.get()
 
-        self.oled.create_text(110, 133, text=f"SNR : {snr:.1f} dB (>15dB)", fill="#00ffcc", font=("Courier", 9, "bold"))
-        self.oled.create_text(110, 150, text=f"STOI: {stoi:.2f} (>0.85)", fill="#00ffcc", font=("Courier", 9, "bold"))
-        self.oled.create_text(320, 133, text=f"PESQ: {pesq:.2f} (>2.5)", fill="#00ffcc", font=("Courier", 9, "bold"))
-        self.oled.create_text(320, 150, text=f"LATENCY: {lat:.1f} ms", fill="#00ffcc", font=("Courier", 9, "bold"))
+        self.oled.create_text(110, 133, text=f"SNR IN: {snr_i:+.1f} dB", fill="#00ffcc", font=("Courier", 9, "bold"))
+        self.oled.create_text(110, 150, text=f"STOI IN: {st_i:.3f}", fill="#00ffcc", font=("Courier", 9, "bold"))
+        self.oled.create_text(320, 133, text=f"SNR GAIN: +{snr_g:.2f} dB", fill="#00ffcc", font=("Courier", 9, "bold"))
+        self.oled.create_text(320, 150, text=f"STOI OUT: {st_o:.3f}", fill="#00ffcc", font=("Courier", 9, "bold"))
 
         # Footer Status
-        dsp_str = "BYPASS" if self.dsp_bypass.get() else "HYBRID-AI"
+        dsp_str = "BYPASS" if self.dsp_bypass.get() else "FULL PIPELINE"
         self.oled.create_line(10, 168, 430, 168, fill="#00ffcc")
         self.oled.create_text(85, 190, text=f"DSP: {dsp_str}", fill="#ffffff", font=("Courier", 9))
-        self.oled.create_text(230, 190, text="MIC ARRAY: ACTIVE", fill="#ffffff", font=("Courier", 8))
+        self.oled.create_text(230, 190, text=f"LATENCY: {lat:.1f}ms", fill="#ffffff", font=("Courier", 8))
         self.oled.create_text(370, 190, text=f"VOL: {self.volume_level.get()}%", fill="#ffffff", font=("Courier", 9))
 
-        # Hazard Alert Flash Effect
+        # Transient Hazard Alert Indicator
         current_scene_info = self.scenes.get(self.env_scene.get(), {})
         if current_scene_info.get("hazard", False) and "ON" in self.anc_mode.get():
             self.siren_flash = not self.siren_flash
-            flash_color = "#771111" if self.siren_flash else "#26262e"
+            flash_color = "#4a1212" if self.siren_flash else "#26262e"
             self.box_frame.configure(bg=flash_color)
-            self.oled.create_rectangle(230, 32, 430, 112, fill="#ff0000", outline="")
-            self.oled.create_text(330, 72, text=f"SAFETY PASS-THROUGH\n{cls_val.upper()}", fill="#ffffff", font=("Courier", 9, "bold"))
+            self.oled.create_rectangle(230, 32, 430, 112, fill="#ff0055", outline="")
+            self.oled.create_text(330, 72, text=f"TRANSIENT REPAIR\n{cls_val.upper()}", fill="#ffffff", font=("Courier", 9, "bold"))
         else:
             self.box_frame.configure(bg="#26262e")
 
@@ -232,25 +257,24 @@ class CompleteHardwareBoxSimulator(tk.Tk):
         scene = self.scenes[self.env_scene.get()]
         self.noise_db.set(scene["db"])
         self.tinyml_class.set(scene["class"])
-        self.snr_val.set(scene["snr"])
-        self.stoi_val.set(scene["stoi"])
-        self.pesq_val.set(scene["pesq"])
-        self.tinyml_confidence.set(random.randint(92, 99))
+        self.snr_in.set(scene["snr_in"])
+        self.snr_gain.set(scene["snr_gain"])
+        self.stoi_in.set(scene["stoi_in"])
+        self.stoi_out.set(scene["stoi_out"])
+        self.tinyml_confidence.set(random.randint(93, 99))
         self.draw_oled()
 
     def _update_loop(self):
         if self.power_state.get():
-            # Step phase timer for smooth wave scrolling animation
             self.time_step = (self.time_step + 4) % 360
             
-            # Subtle real-time dB fluctuation
+            # Real-time subtle fluctuations
             cur_db = self.noise_db.get()
-            self.noise_db.set(max(30.0, min(130.0, cur_db + random.uniform(-0.8, 0.8))))
+            self.noise_db.set(max(30.0, min(130.0, cur_db + random.uniform(-0.5, 0.5))))
             
-            # Subtle metrics jitter
             if "ON" in self.anc_mode.get() and not self.dsp_bypass.get():
-                self.snr_val.set(max(15.0, min(25.0, self.snr_val.get() + random.uniform(-0.05, 0.05))))
-                self.latency_ms.set(max(2.5, min(5.0, 3.8 + random.uniform(-0.2, 0.2))))
+                self.snr_gain.set(max(1.0, min(12.0, self.snr_gain.get() + random.uniform(-0.02, 0.02))))
+                self.latency_ms.set(max(2.5, min(5.0, 3.8 + random.uniform(-0.1, 0.1))))
 
             self.draw_oled()
 
@@ -259,3 +283,5 @@ class CompleteHardwareBoxSimulator(tk.Tk):
 if __name__ == "__main__":
     app = CompleteHardwareBoxSimulator()
     app.mainloop()
+
+      
