@@ -557,7 +557,7 @@ venv\Scripts\activate
 Install the required Python packages:
 
 ```bash
-pip install numpy scipy pyroomacoustics soundfile librosa matplotlib pystoi
+pip install -r requirements.txt
 ```
 
 If the interactive demo is enabled:
@@ -573,7 +573,7 @@ pip install streamlit
 ### Run Validation
 
 ```bash
-python validate.py
+python -m src.validate
 ```
 
 The validation pipeline evaluates the ANC system across:
@@ -589,7 +589,7 @@ It reports speech-intelligibility and SNR improvements before and after processi
 ### Generate Spectrograms
 
 ```bash
-python visualize.py
+python -m src.visualize
 ```
 
 The visualization generates a three-panel STFT comparison:
@@ -598,11 +598,6 @@ The visualization generates a three-panel STFT comparison:
 2. Enhanced output
 3. Clean speech reference
 
-The output is saved as:
-
-```text
-outputs/anc_spectrogram_comparison.png
-```
 
 ### Interactive Demo
 
