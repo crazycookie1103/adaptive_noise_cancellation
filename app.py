@@ -14,7 +14,7 @@ from src.pipeline import run_pipeline
 st.set_page_config(layout="wide", page_title="ANC Pipeline Dashboard")
 
 st.title("Adaptive Noise Cancellation (ANC) Dashboard")
-st.markdown("Interactive UI connected directly to `src/pipeline.py` and `visualize.py`.")
+st.markdown("Interactive UI connected directly to `src/pipeline.py` and `src/visualize.py`.")
 
 # Sidebar Controls
 st.sidebar.header("Scenario & Pipeline Parameters")
