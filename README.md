@@ -1,23 +1,23 @@
 
-Adaptive Noise Cancellation System for Defence Applications
+# Adaptive Noise Cancellation System for Defence Applications
 
-A real-time, multi-stage Adaptive Noise Cancellation (ANC) system designed for defence communication and hearing-protection applications. The system combines adaptive digital signal processing with a lightweight TinyML control engine to suppress environmental noise while preserving speech intelligibility.
+A real-time, multi-stage **Adaptive Noise Cancellation (ANC)** system designed for defence communication and hearing-protection applications. The system combines adaptive digital signal processing with a lightweight TinyML control engine to suppress environmental noise while preserving speech intelligibility.
 
 The proposed hardware uses an **ESP32-S3** as the central processing platform, with dual I2S MEMS microphones for feedforward ANC. A future V2 configuration adds an internal error microphone for closed-loop feedback ANC using FxNLMS.
 
 ---
 
-1. Project Information
+## 1. Project Information
 
-- Project Title: Adaptive Noise Cancellation System for Defence Applications
-- PS ID: `SIH26052`
-- PS Title: `To Develop an AI/ML based -enabled adaptive noise cancellation system (ANC) that effectively surpresses stationary , non-stationary and impulsive defence noises while maintaining high speech intelligibility and real-performance on embedded hardware.`
-- Category: Hardware
-- Theme: Miscellaneous
+- **Project Title:** Adaptive Noise Cancellation System for Defence Applications
+- **PS ID:** `SIH26052`
+- **PS Title:** `To Develop an AI/ML based -enabled adaptive noise cancellation system (ANC) that effectively surpresses stationary , non-stationary and impulsive defence noises while maintaining high speech intelligibility and real-performance on embedded hardware.`
+- **Category:** Hardware
+- **Theme:** Defence / Security
 
 ---
 
-2. Problem Statement
+## 2. Problem Statement
 
 Defence personnel operating in high-noise environments may need to communicate clearly while being exposed to continuous and rapidly changing acoustic disturbances. Conventional passive hearing protection can reduce overall sound levels but may also make speech and important acoustic information harder to perceive.
 
@@ -27,27 +27,27 @@ The system is intended as a **defence-oriented ANC platform**, with potential ap
 
 ---
 
-3. Proposed Solution
+## 3. Proposed Solution
 
 The proposed system uses two synchronized digital MEMS microphones:
 
-- Primary/Talk Microphone: captures speech along with environmental noise.
-- Reference Microphone: captures an ambient-noise reference used by the adaptive filtering stage.
+- **Primary/Talk Microphone:** captures speech along with environmental noise.
+- **Reference Microphone:** captures an ambient-noise reference used by the adaptive filtering stage.
 
 The audio is processed on an **ESP32-S3** using a multi-stage pipeline:
 
-1. Transient / Impulse Detection & Protection
-2. VSS-NLMS Adaptive Filtering
-3. Spectral Wiener Post-Filtering
-4. TinyML-based Noise Classification and VAD Control
+1. **Transient / Impulse Detection & Protection**
+2. **VSS-NLMS Adaptive Filtering**
+3. **Spectral Wiener Post-Filtering**
+4. **TinyML-based Noise Classification and VAD Control**
 
 The TinyML engine operates asynchronously and dynamically adjusts the DSP parameters according to the detected acoustic condition.
 
-The current V1 architecture is a feedforward ANC configuration. V2 extends the system with an internal error microphone for feedback/closed-loop ANC and FxNLMS.
+The current V1 architecture is a **feedforward ANC configuration**. V2 extends the system with an internal error microphone for feedback/closed-loop ANC and FxNLMS.
 
 ---
 
-4. Key Features
+## 4. Key Features
 
 - Real-time adaptive noise cancellation
 - Dual-channel I2S digital audio acquisition
@@ -66,9 +66,9 @@ The current V1 architecture is a feedforward ANC configuration. V2 extends the s
 
 ---
 
-5. Technology Stack
+## 5. Technology Stack
 
-Hardware
+### Hardware
 
 - ESP32-S3
 - INMP441 / equivalent I2S MEMS microphones
@@ -79,7 +79,7 @@ Hardware
 - AMS1117-3.3 for the V1 prototype / efficient buck regulator recommended for the final battery-powered design
 - External CP2102/FTDI programming interface
 
-Software / DSP
+### Software / DSP
 
 - Python
 - NumPy
@@ -91,7 +91,7 @@ Software / DSP
 - Pystoi
 - Streamlit (for interactive demonstration, if enabled)
 
-Machine Learning
+### Machine Learning
 
 - MFCC / log-mel audio features
 - Lightweight 1D CNN / Depthwise Separable Conv1D
@@ -102,9 +102,9 @@ Machine Learning
 
 ---
 
-6. Architecture
+## 6. Architecture
 
-V1 — Feedforward ANC
+### V1 — Feedforward ANC
 
 ```text
                  USB-C 5 V
@@ -159,7 +159,7 @@ Speech + Noise      Ambient Noise Reference
          Speaker
 ```
 
-V2 — Feedback ANC Extension
+### V2 — Feedback ANC Extension
 
 V2 adds a third **internal error microphone** positioned inside the earcup / near the protected listening region.
 
@@ -176,9 +176,9 @@ V1 uses two microphones for feedforward adaptive noise reduction. V2 adds the in
 
 ---
 
-7. How the System Works
+## 7. How the System Works
 
-Primary and Reference Microphones
+### Primary and Reference Microphones
 
 The primary microphone receives:
 
@@ -215,9 +215,9 @@ The reference microphone should be described as an **Ambient Noise Reference**, 
 
 ---
 
-8. DSP Pipeline
+## 8. DSP Pipeline
 
-Stage 0 — Transient / Impulse Detection & Protection
+### Stage 0 — Transient / Impulse Detection & Protection
 
 The first stage detects sudden, high-amplitude acoustic events using kurtosis-based analysis.
 
@@ -261,7 +261,7 @@ The suppression profile can be dynamically adjusted by the TinyML control engine
 
 ---
 
-9. TinyML Control Engine
+## 9. TinyML Control Engine
 
 TinyML does not replace the real-time ANC signal-processing path. It acts as an **asynchronous control engine**.
 
@@ -318,7 +318,7 @@ Low-confidence predictions below the configured confidence threshold can be igno
 
 ---
 
-10. Datasets and Audio Preparation
+## 10. Datasets and Audio Preparation
 
 ### Clean Speech
 
@@ -361,7 +361,7 @@ Different time windows can be selected from noise recordings to avoid evaluating
 
 ---
 
-11. Hardware Components
+## 11. Hardware Components
 
 | Component | Quantity | Purpose |
 |---|---:|---|
@@ -411,7 +411,7 @@ This separation keeps the slower control/inference workload from blocking the ha
 
 ---
 
-12. Prototype Power Budget
+## 12. Prototype Power Budget
 
 The V1 hardware power budget is approximately:
 
@@ -438,7 +438,7 @@ For the final battery-powered design, an efficient switching/buck regulator is p
 
 ---
 
-13. Hardware Connections
+## 13. Hardware Connections
 
 ### I2S Microphones
 
@@ -495,7 +495,7 @@ The OLED is optional and is intended for demonstration/debugging rather than as 
 
 ---
 
-14. Repository Structure
+## 14. Repository Structure
 
 ```text
 ADAPTIVE-ANC/
@@ -534,7 +534,7 @@ ADAPTIVE-ANC/
 
 ---
 
-15. Installation
+## 15. Installation
 
 ```bash
 git clone <YOUR_REPOSITORY_URL>
@@ -568,7 +568,7 @@ pip install streamlit
 
 ---
 
-16. Run
+## 16. Run
 
 ### Run Validation
 
@@ -624,7 +624,7 @@ The demo can present:
 
 ---
 
-17. Results
+## 17. Results
 
 The current software evaluation pipeline reports the following results:
 
@@ -638,7 +638,7 @@ These results demonstrate improvement in speech intelligibility and signal-to-no
 
 ---
 
-18. Evaluation Metrics
+## 18. Evaluation Metrics
 
 ### STOI
 
@@ -676,7 +676,7 @@ The highest measured improvement in the current results is:
 
 ---
 
-19. TinyML Deployment Targets
+## 19. TinyML Deployment Targets
 
 The TinyML model is intended to remain small enough for embedded execution.
 
@@ -695,7 +695,7 @@ The model should run asynchronously so that real-time ANC processing is not inte
 
 ---
 
-20. Screenshots / Prototype Photos
+## 20. Screenshots / Prototype Photos
 
 Add important software screenshots, spectrograms, circuit diagrams, and hardware/prototype photographs to:
 
@@ -717,7 +717,7 @@ Recommended material includes:
 
 ---
 
-21. Demo Video
+## 21. Demo Video
 
 The demo video can demonstrate the complete software pipeline and, where available, the V1 hardware prototype.
 
@@ -755,7 +755,7 @@ Enhanced Speech
 
 ---
 
-22. Future Scope
+## 22. Future Scope
 
 ### 1. Closed-Loop ANC
 
@@ -783,7 +783,7 @@ Further improve the controller so that DSP parameters automatically adapt to cha
 
 ---
 
-23. Important Notes
+## 23. Important Notes
 
 - V1 uses **two microphones** and implements feedforward adaptive noise reduction.
 - V2 adds a **third internal error microphone** for feedback/closed-loop ANC and FxNLMS.
