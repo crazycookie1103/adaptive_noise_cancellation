@@ -695,67 +695,8 @@ The model should run asynchronously so that real-time ANC processing is not inte
 
 ---
 
-## 20. Screenshots / Prototype Photos
 
-Add important software screenshots, spectrograms, circuit diagrams, and hardware/prototype photographs to:
-
-```text
-assets/screenshots/
-```
-
-Recommended material includes:
-
-- System architecture
-- KiCad schematic / PCB
-- ESP32-S3 prototype
-- Dual-microphone setup
-- V1 speaker demonstration
-- V2 internal error microphone concept
-- Input vs. output spectrograms
-- Demo interface
-- STOI / SNR results
-
----
-
-## 21. Demo Video
-
-The demo video can demonstrate the complete software pipeline and, where available, the V1 hardware prototype.
-
-Add the final video link to:
-
-```text
-submission/DEMO.md
-```
-
-A suitable demonstration sequence is:
-
-```text
-Input Noisy Audio
-       |
-       v
-Primary + Reference Channels
-       |
-       v
-Transient Protection
-       |
-       v
-VSS-NLMS
-       |
-       v
-Wiener Post-Filter
-       |
-       v
-Enhanced Speech
-       |
-       +---- TinyML Noise Classification
-                    |
-                    v
-             Dynamic DSP Control
-```
-
----
-
-## 22. Future Scope
+## 20. Future Scope
 
 ### 1. Closed-Loop ANC
 
@@ -783,7 +724,7 @@ Further improve the controller so that DSP parameters automatically adapt to cha
 
 ---
 
-## 23. Important Notes
+## 21. Important Notes
 
 - V1 uses **two microphones** and implements feedforward adaptive noise reduction.
 - V2 adds a **third internal error microphone** for feedback/closed-loop ANC and FxNLMS.
