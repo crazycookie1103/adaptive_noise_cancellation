@@ -1,207 +1,355 @@
-# EV Cabin Active Noise Control (ANC)
 
-A multi-stage digital signal processing and TinyML-based active noise control system for reducing noise inside electric vehicle (EV) cabins while maintaining speech intelligibility and real-time performance.
+Adaptive Noise Cancellation System for Defence Applications
 
----
+A real-time, multi-stage Adaptive Noise Cancellation (ANC) system designed for defence communication and hearing-protection applications. The system combines adaptive digital signal processing with a lightweight TinyML control engine to suppress environmental noise while preserving speech intelligibility.
 
-## Project Overview
-
-Electric vehicles do not have the same engine noise as conventional vehicles, which makes other sounds inside the cabin more noticeable.
-
-The main noise sources considered in this project are:
-
-* High-frequency inverter and motor noise
-* Continuous road and tire noise
-* Sudden transient sounds such as pothole impacts and door slams
-* Non-stationary residual noise
-
-The system uses two microphone channels and combines real-time adaptive filtering with a TinyML control engine.
-
-The processing pipeline consists of:
-
-* **Stage 0:** Kurtosis-based impulse pre-filter
-* **Stage 1:** VSS-NLMS adaptive filtering
-* **Stage 2:** Spectral Wiener post-filter
-* **TinyML Control Engine:** Classifies the noise and provides VAD information to dynamically control the ANC pipeline
+The proposed hardware uses an **ESP32-S3** as the central processing platform, with dual I2S MEMS microphones for feedforward ANC. A future V2 configuration adds an internal error microphone for closed-loop feedback ANC using FxNLMS.
 
 ---
 
-# System Architecture
+1. Project Information
 
-The system receives audio from a primary microphone and a reference microphone.
+- Project Title: Adaptive Noise Cancellation System for Defence Applications
+- PS ID: `SIH26052`
+- PS Title: `To Develop an AI/ML based -enabled adaptive noise cancellation system (ANC) that effectively surpresses stationary , non-stationary and impulsive defence noises while maintaining high speech intelligibility and real-performance on embedded hardware.`
+- Category: Hardware
+- Theme: Miscellaneous
 
-The primary microphone contains both speech and noise, while the reference microphone captures the surrounding ambient noise.
+---
+
+2. Problem Statement
+
+Defence personnel operating in high-noise environments may need to communicate clearly while being exposed to continuous and rapidly changing acoustic disturbances. Conventional passive hearing protection can reduce overall sound levels but may also make speech and important acoustic information harder to perceive.
+
+The challenge is to develop an adaptive noise-control system that can identify changing noise conditions, suppress unwanted acoustic components, and preserve speech intelligibility in real time.
+
+The system is intended as a **defence-oriented ANC platform**, with potential applications in communication headsets, protective headgear, vehicle crew systems, and other high-noise operational environments.
+
+---
+
+3. Proposed Solution
+
+The proposed system uses two synchronized digital MEMS microphones:
+
+- Primary/Talk Microphone: captures speech along with environmental noise.
+- Reference Microphone: captures an ambient-noise reference used by the adaptive filtering stage.
+
+The audio is processed on an **ESP32-S3** using a multi-stage pipeline:
+
+1. Transient / Impulse Detection & Protection
+2. VSS-NLMS Adaptive Filtering
+3. Spectral Wiener Post-Filtering
+4. TinyML-based Noise Classification and VAD Control
+
+The TinyML engine operates asynchronously and dynamically adjusts the DSP parameters according to the detected acoustic condition.
+
+The current V1 architecture is a feedforward ANC configuration. V2 extends the system with an internal error microphone for feedback/closed-loop ANC and FxNLMS.
+
+---
+
+4. Key Features
+
+- Real-time adaptive noise cancellation
+- Dual-channel I2S digital audio acquisition
+- Primary + ambient reference microphone architecture
+- VSS-NLMS adaptive filtering for coherent noise
+- Transient / impulse detection and protection
+- Wiener spectral post-filter for residual noise
+- TinyML-based noise classification
+- Voice Activity Detection (VAD)
+- Dynamic DSP parameter control
+- Dual-core ESP32-S3 processing architecture
+- DMA-based continuous audio streaming
+- OLED-based system telemetry for demonstration/debugging
+- V1 feedforward ANC and V2 feedback ANC architecture
+- Objective evaluation using STOI and SNR improvement
+
+---
+
+5. Technology Stack
+
+Hardware
+
+- ESP32-S3
+- INMP441 / equivalent I2S MEMS microphones
+- MAX98357A I2S DAC + Class-D amplifier
+- 4–8 Ω speaker for V1 demonstration
+- SSD1306 128×64 OLED (optional)
+- USB-C 5 V power input
+- AMS1117-3.3 for the V1 prototype / efficient buck regulator recommended for the final battery-powered design
+- External CP2102/FTDI programming interface
+
+Software / DSP
+
+- Python
+- NumPy
+- SciPy
+- Librosa
+- SoundFile
+- PyRoomAcoustics
+- Matplotlib
+- Pystoi
+- Streamlit (for interactive demonstration, if enabled)
+
+Machine Learning
+
+- MFCC / log-mel audio features
+- Lightweight 1D CNN / Depthwise Separable Conv1D
+- Global Average Pooling
+- Softmax classification
+- INT8 quantization for embedded deployment
+- TensorFlow Lite for Microcontrollers (planned embedded deployment)
+
+---
+
+6. Architecture
+
+V1 — Feedforward ANC
 
 ```text
-Raw Audio Inputs
-       │
-       ├──────────────────────────────────────────────┐
-       │                                              │
-       ▼                                              ▼
-Primary Mic Channel                         Reference Mic Channel
-(Speech + Noise)                              (Ambient Noise)
-       │                                              │
-       └──────────────────────┬───────────────────────┘
-                              │
-                              ▼
-              ┌───────────────────────────────────────┐
-              │ Stage 0: Kurtosis Impulse Pre-Filter  │
-              │ (Clamps transients / door slams)      │
-              └──────────────────────┬────────────────┘
-                                     │
-                    ┌────────────────┴────────────────┐
-                    │                                 │
-                    ▼                                 ▼
-          ┌───────────────────────┐       ┌─────────────────────────────┐
-          │ Real-Time Audio Loop  │       │ Async TinyML Control Engine │
-          │   (Sample-by-Sample)  │       │   (Runs every 100-200 ms)   │
-          └──────────┬────────────┘       └──────────────┬──────────────┘
-                     │                                   │
-                     ▼                                   │
-          ┌───────────────────────┐                       │
-          │ Stage 1: VSS-NLMS     │                       │
-          │ Removes Stationary    │                       │
-          │ Coherent Noise        │                       │
-          └──────────┬────────────┘                       │
-                     │                                   │
-                     │ Residual Audio +                   │
-                     │ Primary Error                      │
-                     │                                   │
-                     ▼                                   │
-          ┌───────────────────────┐                       │
-          │ Stage 2: Spectral     │◄──────────────────────┘
-          │ Post-Filter (Wiener)  │
-          │ Removes Uncorrelated  │
-          │ Non-Stationary Residual│
-          └──────────┬────────────┘
-                     │
-                     ▼
-             Cleaned Speech Output
+                 USB-C 5 V
+                     |
+          +----------+----------+
+          |                     |
+          v                     v
+     3.3 V Regulator       MAX98357A
+          |                     |
+     +----+----+                v
+     |    |    |             Speaker
+     v    v    v
+  ESP32  Mic  OLED
+    -S3
+     |
+     | I2S + DMA
+     |
+ +---+-------------------+
+ |                      |
+ v                      v
+Primary/Talk Mic    Reference Mic
+Speech + Noise      Ambient Noise Reference
+ |                      |
+ +----------+-----------+
+            |
+            v
+  Transient / Impulse
+  Detection & Protection
+            |
+      +-----+------+
+      |            |
+      v            v
+ Real-Time DSP   TinyML Control
+      |            |
+      v            v
+ VSS-NLMS      Noise Class +
+      |         VAD State
+      |            |
+      +-----<------+
+            |
+            v
+   Wiener Spectral
+    Post-Filter
+            |
+            v
+       I2S TX
+            |
+            v
+       MAX98357A
+            |
+            v
+         Speaker
 ```
 
----
+V2 — Feedback ANC Extension
 
-# How the System Works
-
-## Primary and Reference Microphones
-
-The system uses two audio channels.
-
-### Primary Mic Channel
+V2 adds a third **internal error microphone** positioned inside the earcup / near the protected listening region.
 
 ```text
-Primary = Speech + Noise
+Reference Mic ───────┐
+                     |
+Primary Mic ─────────┼──> ESP32-S3 ──> FxNLMS ──> Audio Output
+                     |                    ^
+                     |                    |
+Internal Error Mic ──┴────────────────────┘
 ```
 
-This is the main audio signal that needs to be cleaned.
+V1 uses two microphones for feedforward adaptive noise reduction. V2 adds the internal error microphone for true feedback/closed-loop ANC and FxNLMS.
 
-### Reference Mic Channel
+---
+
+7. How the System Works
+
+Primary and Reference Microphones
+
+The primary microphone receives:
 
 ```text
-Reference = Ambient Noise
+d(n) = s(n) + v(n)
 ```
 
-The reference channel provides information about the environmental noise and is used by the adaptive filtering stage.
+where:
 
----
+- `s(n)` = desired speech
+- `v(n)` = unwanted environmental noise
 
-## Stage 0 — Kurtosis Impulse Pre-Filter
-
-The first stage handles sudden, high-amplitude transient sounds.
-
-Examples include:
-
-* Door slams
-* Pothole impacts
-* Other impulsive disturbances
-
-Kurtosis is used to detect these transient events.
-
-Once detected, the transient is clamped before it enters the main adaptive filtering stage.
-
-This prevents large impulsive signals from disturbing the adaptive filter.
-
----
-
-## Stage 1 — VSS-NLMS Adaptive Filtering
-
-The real-time audio loop processes the signal sample-by-sample using a **Variable Step-Size Normalized Least Mean Squares (VSS-NLMS)** adaptive filter.
-
-This stage primarily removes **stationary coherent noise** using the reference microphone signal.
-
-The VSS-NLMS stage produces:
+The reference microphone provides an estimate of the ambient noise:
 
 ```text
-Residual Audio + Primary Error
+x(n) ≈ v(n)
 ```
 
-These signals are then passed to the spectral post-filter.
+The adaptive filter uses this reference to estimate the noise component present in the primary channel.
+
+```text
+y(n) = v̂(n)
+
+e(n) = d(n) − y(n)
+```
+
+The target is:
+
+```text
+e(n) ≈ s(n)
+```
+
+The reference microphone should be described as an **Ambient Noise Reference**, rather than as capturing "noise only", because real acoustic environments may introduce speech, reflections, and other signals into the reference channel.
 
 ---
 
-## Stage 2 — Spectral Post-Filter
+8. DSP Pipeline
 
-The remaining audio is processed using a **Wiener spectral post-filter**.
+Stage 0 — Transient / Impulse Detection & Protection
 
-This stage removes **uncorrelated non-stationary residual noise** that remains after the adaptive filtering stage.
+The first stage detects sudden, high-amplitude acoustic events using kurtosis-based analysis.
 
-The amount of suppression is controlled by the information provided by the TinyML control engine.
+Potential disturbances include:
+
+- Impulsive mechanical sounds
+- Sudden environmental impacts
+- Other short-duration acoustic transients
+
+Rather than simply clipping the signal, the detector protects the adaptive filter by controlling its behaviour during an impulse, for example by reducing or freezing adaptive updates.
+
+```text
+Audio
+  |
+  v
+Transient Detector
+  |
+  v
+Impulse Detected?
+  |
+  +---- YES ----> Reduce / Freeze Adaptive Update
+  |
+  +---- NO -----> Normal Adaptive Processing
+```
+
+### Stage 1 — VSS-NLMS Adaptive Filtering
+
+The real-time audio path uses a **Variable Step-Size Normalized Least Mean Squares (VSS-NLMS)** adaptive filter.
+
+This stage primarily suppresses coherent environmental noise using the reference microphone.
+
+The adaptive output is passed to the following spectral stage as residual/error audio.
+
+### Stage 2 — Wiener Spectral Post-Filter
+
+The remaining signal is processed using a **Wiener spectral post-filter**.
+
+This stage targets residual, uncorrelated, and non-stationary noise that remains after adaptive filtering.
+
+The suppression profile can be dynamically adjusted by the TinyML control engine.
 
 ---
 
+9. TinyML Control Engine
 
+TinyML does not replace the real-time ANC signal-processing path. It acts as an **asynchronous control engine**.
 
-# Datasets and Mixing
+The intended control flow is:
 
-## Clean Speech
+```text
+                TinyML Control Engine
+                         |
+              +----------+----------+
+              |                     |
+              v                     v
+         Noise Class             VAD State
+              |                     |
+              +----------+----------+
+                         |
+                         v
+               Dynamic DSP Profile
+                         |
+                         v
+                Real-Time ANC
+```
+
+The TinyML engine provides:
+
+- Noise classification
+- Voice Activity Detection (VAD)
+- Dynamic control of adaptive-filter parameters
+- Dynamic control of post-filter attenuation
+
+### Noise-Class Mapping
+
+| Detected Condition | System Response |
+|---|---|
+| Stationary Noise | Increase / maximize NLMS adaptation |
+| Non-Stationary Noise | Increase post-filter attenuation |
+| Speech Detected | Freeze NLMS adaptation to preserve speech |
+
+The model interface can use messages of the following form:
+
+```json
+{
+  "class": "stationary",
+  "confidence": 0.85
+}
+```
+
+Valid classes:
+
+- `stationary`
+- `non_stationary`
+- `speech`
+
+Low-confidence predictions below the configured confidence threshold can be ignored by the control interface.
+
+---
+
+10. Datasets and Audio Preparation
+
+### Clean Speech
 
 Clean speech samples are taken from the **LibriSpeech ASR Corpus**, using the `dev-clean` subset.
 
 The speech recordings are sampled at **16 kHz**.
 
-## EV Cabin Noise
+### Environmental Noise
 
-The project uses custom automotive noise profiles representing different EV cabin conditions.
+The development and evaluation pipeline uses noise recordings from the **DEMAND Multichannel Acoustic Noise Database** and corresponding prepared noise scenarios.
 
-```text
-ev_inverter_hum.wav
-ev_road_tire_noise.wav
-ev_pothole_thumps.wav
-```
+The dataset categories used for TinyML development include:
 
-### Noise Types
+- Stationary noise environments such as `NOFFICE`, `NFIELD`, and `NPARK`
+- Non-stationary environments such as `PCAFE`, `PSTATION`, and `SSTRAFFIC`
 
-**`ev_inverter_hum.wav`**
+### Audio Mixing
 
-High-frequency tonal noise produced by power electronics.
-
-**`ev_road_tire_noise.wav`**
-
-Continuous broadband noise caused by road and tire interaction.
-
-**`ev_pothole_thumps.wav`**
-
-Non-stationary transient sounds caused by sudden road impacts.
-
----
-
-# Audio Mixing
-
-The mixing process is handled by:
-
-```text
-src/data_prep.py
-```
-
-The script creates the two microphone channels required by the ANC system.
-
-### Primary Channel
+The primary channel is formed as:
 
 ```text
 Primary = Speech + Noise
 ```
 
-The speech and noise are mixed at specific SNR values:
+The reference channel is:
+
+```text
+Reference = Noise Reference
+```
+
+The evaluation pipeline tests multiple input SNR conditions:
 
 ```text
 -3 dB
@@ -209,107 +357,226 @@ The speech and noise are mixed at specific SNR values:
 +3 dB
 ```
 
-### Reference Channel
-
-```text
-Reference = Noise
-```
-
-The reference noise signal is used by the VSS-NLMS adaptive filter.
-
-### Randomized Noise Slicing
-
-Different time windows are selected from the noise recordings during testing.
-
-This prevents the evaluation from depending on one fixed section of a noise recording.
+Different time windows can be selected from noise recordings to avoid evaluating the system on only one fixed portion of a recording.
 
 ---
 
-# Repository Structure
+11. Hardware Components
+
+| Component | Quantity | Purpose |
+|---|---:|---|
+| ESP32-S3 | 1 | Real-time DSP, I2S acquisition, TinyML inference and control |
+| Primary/Talk I2S MEMS Mic | 1 | Captures speech + environmental noise |
+| Reference I2S MEMS Mic | 1 | Provides ambient-noise reference |
+| MAX98357A | 1 | I2S DAC + Class-D amplifier for V1 speaker demonstration |
+| 4–8 Ω Speaker | 1 | Acoustic output for V1 demonstration |
+| SSD1306 OLED | 1 optional | Displays mode, noise class and telemetry |
+| USB-C 5 V supply | 1 | Prototype power source |
+| AMS1117-3.3 | 1 for V1 | 5 V to 3.3 V regulation |
+| Efficient Buck Regulator | Future | Preferred for final battery-powered design |
+| Internal Error MEMS Mic | 1 optional, V2 | Feedback microphone for FxNLMS |
+| CP2102/FTDI + 6-pin header | 1 | External programming interface |
+
+### Why ESP32-S3?
+
+The ESP32-S3 is suitable for the prototype because it provides:
+
+- Dual-core processing
+- Up to 240 MHz operation
+- I2S peripheral for digital audio
+- DMA support for continuous audio streaming
+- Sufficient processing capability for NLMS/FxNLMS
+- Lightweight TinyML capability
+- Low-cost embedded implementation
+- C/C++ development through ESP-IDF
+
+The intended task split is:
 
 ```text
+Core 0                         Core 1
+Real-Time Audio                TinyML Control
+     |                              |
+I2S + DMA                     Audio context
+     |                              |
+Transient detection           MFCC / log-mel
+     |                              |
+VSS-NLMS / FxNLMS             Classification
+     |                              |
+Wiener filter                 Parameter update
+     |                              |
+I2S output                    ---> Core 0
+```
 
+This separation keeps the slower control/inference workload from blocking the hard real-time audio path.
 
-## 1. Directory Tree
+---
 
+12. Prototype Power Budget
+
+The V1 hardware power budget is approximately:
+
+| Load | Estimated Power |
+|---|---:|
+| ESP32-S3 | ~1.32 W |
+| 2 × MEMS microphones | ~0.013 W |
+| SSD1306 OLED | ~0.066 W |
+| MAX98357A + speaker (typical) | ~1.11 W |
+| **Estimated Total** | **~2.5 W** |
+
+A design margin of approximately 50% gives a design requirement of about **3.75 W**.
+
+Recommended prototype supply:
 
 ```text
-anc-poc/
-├── data/
-│   ├── clean_speech/          # LibriSpeech clean audio subdirectories
-│   ├── mixed/                 # Pre-mixed scenario cache
-│   └── noise/                 # Inverter, tire, and road noise audio files
-├── outputs/                   # Visualizations (.png) and test audio (.wav)
+5 V / 2 A minimum
+5 V / 3 A preferred
+```
+
+The V1 prototype uses a USB-C 5 V supply. The MAX98357A is powered directly from the 5 V rail, while the ESP32-S3, microphones and OLED use the 3.3 V rail.
+
+For the final battery-powered design, an efficient switching/buck regulator is preferred over the AMS1117-3.3 because the linear regulator can dissipate significant heat while converting 5 V to 3.3 V.
+
+---
+
+13. Hardware Connections
+
+### I2S Microphones
+
+Typical digital MEMS microphone connections:
+
+```text
+MEMS MIC             ESP32-S3
+--------             --------
+VDD       ----------> 3.3 V
+GND       ----------> GND
+SCK/BCLK  ----------> I2S BCLK
+WS/LRCLK  ----------> I2S WS
+DOUT      ----------> I2S DATA IN
+L/R       ----------> Channel Selection
+```
+
+For the two-channel V1 architecture:
+
+```text
+Primary DOUT   ---> Left I2S channel
+Reference DOUT ---> Right I2S channel
+
+BCLK -----------+
+WS/LRCLK -------+----> ESP32-S3 I2S RX
+```
+
+The exact microphone channel-selection configuration and ESP32-S3 GPIO assignments depend on the selected development board and microphone breakout.
+
+### Audio Output
+
+```text
+ESP32-S3 I2S TX
+      |
+      +---- BCLK ----> MAX98357A BCLK
+      +---- WS ------> MAX98357A LRCLK
+      +---- DATA ----> MAX98357A DIN
+                         |
+                         v
+                      Speaker
+```
+
+The MAX98357A is intended for the V1 **speaker demonstration**. A final headphone implementation would use an appropriate audio codec/headphone amplifier and headphone driver instead.
+
+### OLED
+
+```text
+ESP32-S3
+   |
+   +---- SDA ----> OLED SDA
+   +---- SCL ----> OLED SCL
+```
+
+The OLED is optional and is intended for demonstration/debugging rather than as part of the ANC signal path.
+
+---
+
+14. Repository Structure
+
+```text
+ADAPTIVE-ANC/
+├── README.md
+├── SUBMISSION_GUIDE.md
+├── submission/
+│   ├── PRESENTATION.md
+│   └── DEMO.md
 ├── src/
 │   ├── __init__.py
-│   ├── control_interface.py   # State machine mapping CNN outputs -> DSP parameters
-│   ├── data_prep.py           # Multi-channel scenario mixer & offset slicer
-│   ├── evaluate.py            # STOI and SNR gain computation metrics
-│   ├── impulse.py             # Stage 0: Transient impulse detection & repair
-│   ├── make_impulse.py        # Synthetic impulse generator for stress tests
-│   ├── nlms.py                # Stage 1: VAD-Gated NLMS adaptive filter
-│   ├── pipeline.py            # End-to-end pipeline execution wrapper
-│   ├── room_sim.py            # Cabin acoustic transfer function simulation
-│   ├── spectral_mask.py       # Stage 3: Spectral Wiener post-filter mask
-│   └── vad_fast.py            # Fast energy Voice Activity Detector
-├── build_samples.py           # Sample dataset generator script
-├── demo.py                    # Demonstration runner script
-├── fetch_ev_data.py           # Open-source dataset downloader script
-├── validate.py                # Multi-SNR stress-test and ablation suite
-├── visualize.py               # 3-Panel STFT spectrogram generator
-└── requirements.txt           # Environment dependencies
+│   ├── control_interface.py
+│   ├── data_prep.py
+│   ├── evaluate.py
+│   ├── impulse.py
+│   ├── make_impulse.py
+│   ├── nlms.py
+│   ├── pipeline.py
+│   ├── room_sim.py
+│   ├── spectral_mask.py
+│   └── vad_fast.py
+├── data/
+│   ├── clean_speech/
+│   ├── mixed/
+│   └── noise/
+├── outputs/
+├── build_samples.py
+├── demo.py
+├── validate.py
+├── visualize.py
+├── requirements.txt
+├── docs/
+│   └── architecture.md
+└── assets/
+    └── screenshots/
 ```
 
 ---
 
-# Installation
+15. Installation
 
-## Dependencies
+```bash
+git clone <YOUR_REPOSITORY_URL>
+cd <YOUR_PROJECT_FOLDER>
+pip install -r requirements.txt
+```
 
-The project uses the following Python libraries:
-
-* **NumPy** — numerical operations on audio signals
-* **SciPy** — signal processing and kurtosis calculation
-* **SoundFile** — reading and writing WAV/FLAC files
-* **Pystoi** — STOI speech intelligibility measurement
-* **Matplotlib** — spectrogram visualization
-
-## Environment Setup
-
-Create a virtual environment:
+Alternatively, create a virtual environment first:
 
 ```bash
 python -m venv venv
 ```
 
-Activate it on Windows:
+On Windows:
 
 ```bash
 venv\Scripts\activate
 ```
 
-Install the required packages:
+Install the required Python packages:
 
 ```bash
- pip install numpy scipy pyroomacoustics soundfile librosa matplotlib pystoi
-pip install streamlit numpy matplotlib scipy
+pip install numpy scipy pyroomacoustics soundfile librosa matplotlib pystoi
 ```
-``` to run the app
-```streamlit run app.py
+
+If the interactive demo is enabled:
+
+```bash
+pip install streamlit
+```
 
 ---
 
-# Running the Project
+16. Run
 
-## Run Validation
-
-Run the complete validation script:
+### Run Validation
 
 ```bash
 python validate.py
 ```
 
-The validation script tests the system at:
+The validation pipeline evaluates the ANC system across:
 
 ```text
 -3 dB SNR
@@ -317,53 +584,65 @@ The validation script tests the system at:
 +3 dB SNR
 ```
 
-It reports the speech intelligibility and SNR improvement before and after processing.
+It reports speech-intelligibility and SNR improvements before and after processing.
 
----
-
-## Generate Spectrograms
-
-Run:
+### Generate Spectrograms
 
 ```bash
 python visualize.py
 ```
 
-This generates a three-panel STFT comparison:
+The visualization generates a three-panel STFT comparison:
 
 1. Noisy input
 2. Enhanced output
-3. Clean speech
+3. Clean speech reference
 
-The resulting image is saved as:
+The output is saved as:
 
 ```text
 outputs/anc_spectrogram_comparison.png
 ```
 
----
+### Interactive Demo
 
-# Results
+If the Streamlit interface is present in the repository:
 
-The current pipeline produces the following results:
-
-```text
-Configuration                       | SNR   | STOI In   | STOI Out  | Delta    | SNR Gain
-------------------------------------------------------------------------------------------
-Full Pipeline                       | -3.0  | 0.7087    | 0.9298    | +0.2211  | +7.95 dB
-Full Pipeline                       | +0.0  | 0.7854    | 0.9363    | +0.1509  | +5.69 dB
-Full Pipeline                       | +3.0  | 0.8525    | 0.9533    | +0.1008  | +3.60 dB
+```bash
+streamlit run app.py
 ```
 
-The system is tested across multiple SNR conditions to check whether the pipeline remains stable as the noise level changes.
+The demo can present:
+
+- Noisy audio
+- Processed ANC output
+- TinyML-controlled output
+- Waveforms
+- STFT spectrograms
+- STOI values
+- SNR values
 
 ---
 
-# Evaluation Metrics
+17. Results
 
-## STOI
+The current software evaluation pipeline reports the following results:
 
-**STOI (Short-Time Objective Intelligibility)** is used to measure speech intelligibility.
+| Configuration | Input SNR | STOI In | STOI Out | STOI Δ | SNR Gain |
+|---|---:|---:|---:|---:|---:|
+| Full Pipeline | -3.0 dB | 0.7087 | 0.9298 | +0.2211 | +7.95 dB |
+| Full Pipeline | 0.0 dB | 0.7854 | 0.9363 | +0.1509 | +5.69 dB |
+| Full Pipeline | +3.0 dB | 0.8525 | 0.9533 | +0.1008 | +3.60 dB |
+
+These results demonstrate improvement in speech intelligibility and signal-to-noise ratio across multiple input-noise conditions.
+
+---
+
+18. Evaluation Metrics
+
+### STOI
+
+**Short-Time Objective Intelligibility (STOI)** is used to evaluate speech intelligibility.
 
 The score ranges from:
 
@@ -373,30 +652,23 @@ The score ranges from:
 
 A higher score indicates better speech intelligibility.
 
-For the tested **-3 dB SNR** condition:
+For the tested -3 dB SNR condition:
 
 ```text
 STOI Before = 0.7087
 STOI After  = 0.9298
+Improvement = +0.2211
 ```
 
-This gives a STOI improvement of:
+### SNR Gain
 
-```text
-+0.2211
-```
-
----
-
-## SNR Gain
-
-SNR gain measures the change in signal-to-noise ratio after processing.
+SNR gain is calculated as:
 
 ```text
 SNR Gain = SNR After - SNR Before
 ```
 
-The highest measured improvement in the current test results is:
+The highest measured improvement in the current results is:
 
 ```text
 +7.95 dB
@@ -404,245 +676,119 @@ The highest measured improvement in the current test results is:
 
 ---
 
-# Spectrogram Analysis
+19. TinyML Deployment Targets
 
-The visualization script generates a three-panel comparison.
+The TinyML model is intended to remain small enough for embedded execution.
 
-### Panel 1 — Noisy Input
+Target characteristics include:
 
-Shows the speech signal mixed with EV cabin noise.
+- **Input features:** 13–20 MFCC coefficients
+- **Audio context:** 500 ms
+- **Hop size:** 100 ms
+- **Model:** lightweight 1D CNN / Depthwise Separable Conv1D
+- **Quantization:** INT8
+- **Target peak RAM:** < 64 KB
+- **Target inference latency:** < 20 ms per 100 ms hop
+- **Possible deployment:** TensorFlow Lite for Microcontrollers
 
-### Panel 2 — Enhanced Output
-
-Shows the result after the complete ANC pipeline.
-
-The background noise is reduced while the main speech features are retained.
-
-### Panel 3 — Clean Ground Truth
-
-Shows the original clean speech signal used as the reference.
-
-This allows the enhanced output to be compared directly with the clean signal.
-
+The model should run asynchronously so that real-time ANC processing is not interrupted.
 
 ---
 
+20. Screenshots / Prototype Photos
 
-# TinyML (IN SO FAR this is what the crux of the chats were)(follow what fits)
-
-The TinyML model is an important part of the system.
-
-It does not replace the real-time ANC processing. Instead, it works as an **asynchronous control engine** for the ANC pipeline.
-
-The TinyML engine runs every **100–200 ms** and provides:
-
-* **Noise Class**
-* **VAD State**
-
-These outputs are used to dynamically change how the real-time audio processing behaves.
+Add important software screenshots, spectrograms, circuit diagrams, and hardware/prototype photographs to:
 
 ```text
-                    TinyML Control Engine
-                             │
-                 ┌───────────┴───────────┐
-                 ▼                       ▼
-             Noise Class              VAD State
-                 │                       │
-                 └───────────┬───────────┘
-                             ▼
-                  Dynamic Suppression
-                       Profile
-                             │
-                             ▼
-                  Real-Time ANC Pipeline
+assets/screenshots/
 ```
 
-## Dynamic Suppression Profile
+Recommended material includes:
 
-The system changes its processing according to the detected condition.
-
-| Detected Condition   | System Response               |
-| -------------------- | ----------------------------- |
-| Stationary Noise     | Maximize NLMS μ               |
-| Non-Stationary Noise | Boost post-filter attenuation |
-| Speech Detected      | Freeze NLMS (VAD)             |
-
-This allows the system to respond differently to different noise conditions instead of using the same filtering settings all the time.
+- System architecture
+- KiCad schematic / PCB
+- ESP32-S3 prototype
+- Dual-microphone setup
+- V1 speaker demonstration
+- V2 internal error microphone concept
+- Input vs. output spectrograms
+- Demo interface
+- STOI / SNR results
 
 ---
+
+21. Demo Video
+
+The demo video can demonstrate the complete software pipeline and, where available, the V1 hardware prototype.
+
+Add the final video link to:
+
 ```text
-          
-[ TinyML CNN / Stub File ] 
-        │  Emits JSON every 100ms
-        │  {"class": "stationary", "confidence": 0.85}
-        ▼
-[ src/control_interface.py ]  <-- PERMANENT BRIDGE
-        │  1. Checks confidence (>= 0.6)
-        │  2. Maps class to target parameters
-        │  3. Smooths transition via EMA (step_smooth)
-        ▼
-[ NLMS Filter & Wiener Mask ]  <-- DSP Pipeline
-        Uses smoothed mu & floor_gain
-
-## 3. specs u can consider
-
-### Model Output Interface Contract
-
-Your model implementation must emit JSON messages matching this schema on every **100 ms hop**:
-
-```json
-{
-  "class": "stationary",
-  "confidence": 0.85
-}
+submission/DEMO.md
 ```
 
-**Valid `class` strings:** `"stationary"`, `"non_stationary"`, `"speech"`.
+A suitable demonstration sequence is:
 
-**Confidence filtering:** Messages with `confidence < 0.60` are ignored by `ControlState.update()`.
-
-### Target Class Mapping & Exclusions
-
-* **`stationary`**: Maps to `μ = 0.50`, `floor_gain = 0.15` (Aggressive filtering for inverter hum/HVAC).
-* **`non_stationary`**: Maps to `μ = 0.20`, `floor_gain = 0.35` (Moderate adaptation for road/tire rumble).
-* **`speech`**: Maps to `μ = 0.05`, `floor_gain = 0.60` (Freezes NLMS weights to preserve voice formants).
-* **CRITICAL RULE:** **Do NOT create an `impulsive` class.** Non-stationary impulsive thumps (potholes) are stripped upstream by Stage 0 (`src/impulse.py`) using Kurtosis filtering before reaching this layer.
-
----
-
-## YOU CAN DO THIS SUGGESTION AGAIN
-
-To train the 3-class model, gather **1,500–2,000 samples (500 ms window context)** per class (**~12.5–16.5 minutes** raw audio per class, **~50 minutes** total).
-
-### Train / Validation Split Rule (CRITICAL)
-
-**Do NOT randomly shuffle frame samples across train/validation splits.** Adjacent 500 ms frames from the same recording share acoustic profiles and speaker characteristics. Shuffling frame samples will leak data into validation sets, inflating metrics while failing in real-world deployment.
-
-* **Partition Rule:** Hold out *entire audio files and speakers* when building train/validation sets.
-
-| **Class**            | **Target Samples** | **Raw Duration** | **Recommended Source**                    | **Split Strategy**     |
-| -------------------- | -----------------: | ---------------: | ----------------------------------------- | ---------------------- |
-| **`stationary`**     |      1,500 – 2,000 |  12.5 – 16.5 min | DEMAND (`NOFFICE`, `NFIELD`, `NPARK`)     | Hold out full files    |
-| **`non_stationary`** |      1,500 – 2,000 |  12.5 – 16.5 min | DEMAND (`PCAFE`, `PSTATION`, `SSTRAFFIC`) | Hold out full files    |
-| **`speech`**         |      1,500 – 2,000 |  12.5 – 16.5 min | LibriSpeech (`dev-clean` subset)          | Hold out full speakers |
-
----
-
-## 5. Model Footprint & Execution Constraints
-
-* **Features:** 13–20 MFCC coefficients over a **500 ms** window (sliding with **100 ms** hop size).
-* **Topology:** 1D CNN / Depthwise Separable Conv1D + Global Average Pooling + Softmax.
-* **Binary Footprint:** **30 KB – 50 KB** max (INT8 quantized via TensorFlow Lite for Microcontrollers).
-* **SRAM / Working Memory:** **< 64 KB** peak RAM consumption.
-* **Inference Latency:** **< 20 ms execution per 100 ms frame hop** on target hardware (ESP32-S3 / Cortex-M4), leaving **80 ms CPU headroom** for NLMS filtering and spectral masking.
-
----
-
-## 6. Teammate Integration Workflow
-
-Create a new feature branch to implement your model under a stub/wrapper module without modifying the `main` branch:
-
-```bash
-# 1. Fetch latest main and check out feature branch
-git checkout main
-git pull origin main
-git checkout -b feature/tinyml-cnn-integration
-
-# 2. Place model code inside a dedicated package under src/
-# e.g., src/tinyml/inference.py
-
-# 3. Verify locally with validation and visualization scripts
-python validate.py
-python visualize.py
-
-# 4. Push branch and open a Pull Request (PR) on GitHub
-git add .
-git commit -m "feat(tinyml): integrate 3-class 1D-CNN classifier with control_interface"
-git push origin feature/tinyml-cnn-integration
+```text
+Input Noisy Audio
+       |
+       v
+Primary + Reference Channels
+       |
+       v
+Transient Protection
+       |
+       v
+VSS-NLMS
+       |
+       v
+Wiener Post-Filter
+       |
+       v
+Enhanced Speech
+       |
+       +---- TinyML Noise Classification
+                    |
+                    v
+             Dynamic DSP Control
 ```
 
+---
 
+22. Future Scope
 
+### 1. Closed-Loop ANC
 
-The target limits for the TinyML model are(if scaling to hardware)
+Extend V1 feedforward ANC to V2 feedback ANC by adding an internal error microphone and implementing **FxNLMS**.
 
-| Parameter              |              Target |
-| ---------------------- | ------------------: |
-| Flash Memory (Weights) |            < 256 KB |
-| SRAM / Working RAM     |             < 64 KB |
-| Inference Latency      |             < 10 ms |
-| STOI Gain              | ≥ +0.15 at 0 dB SNR |
+### 2. Defence-Specific Dataset Expansion
 
-The model is intended to run on short audio frames while maintaining the required real-time response.
+Expand the evaluation dataset with representative high-noise environments relevant to defence applications, while maintaining separate files/scenarios for training and validation.
+
+### 3. Embedded TinyML Deployment
+
+Deploy the trained lightweight classifier directly on the ESP32-S3 using an embedded inference framework such as TensorFlow Lite for Microcontrollers.
+
+### 4. Headset / Protective-Headgear Integration
+
+Replace the V1 speaker demonstration output with an appropriate headphone/earcup audio driver and integrate the microphones and processing electronics into a compact wearable form factor.
+
+### 5. Real-Time Hardware Validation
+
+Validate the complete system using physical microphones, controlled acoustic disturbances, and real-time measurements of latency, attenuation, speech intelligibility, and stability.
+
+### 6. Adaptive Multi-Condition Control
+
+Further improve the controller so that DSP parameters automatically adapt to changing stationary, non-stationary, speech-dominant, and transient acoustic conditions.
 
 ---
 
-# TinyML Deployment(suggestion not final claude)
+23. Important Notes
 
-For embedded deployment, the CNN can be quantized to **8-bit integers (INT8)**.
-
-Possible deployment frameworks include:
-
-* TensorFlow Lite for Microcontrollers
-* STM32Cube.AI
-
-The goal is to keep the model small enough to run within the available Flash and RAM while maintaining the required inference speed.
-
----
-
-
-## 6. Teammate Integration Workflow
-
-Create a new feature branch to implement your model under a stub/wrapper module without modifying the `main` branch:
-
-```bash
-# 1. Fetch latest main and check out feature branch
-git checkout main
-git pull origin main
-git checkout -b feature/tinyml-cnn-integration
-
-# 2. Place model code inside a dedicated package under src/
-# e.g., src/tinyml/inference.py
-
-# 3. Verify locally with validation and visualization scripts
-python validate.py
-python visualize.py
-
-# 4. Push branch and open a Pull Request (PR) on GitHub
-git add .
-git commit -m "feat(tinyml): integrate 3-class 1D-CNN classifier with control_interface"
-git push origin feature/tinyml-cnn-integration
-```
-
-# Future Work
-
-## 1. Dataset Expansion
-
-Add more real-world vehicle noise recordings to test the system under a wider range of conditions.
-
-Possible sources include:
-
-* DEMAND Multichannel Acoustic Noise Database( we have used this)
-* Freesound
-* AudioSet
-
-## 2. Speech Dataset Expansion
-
-Additional LibriSpeech(used this) samples can be used to test the system with more speakers and different speech recordings.
-
-## 3. Interactive Demo
-
-A lightweight interface can be built using Streamlit or Gradio.
-
-The demo can provide:
-
-* Noisy audio playback
-* Classical DSP output
-* TinyML-controlled output
-* Waveform visualization
-* STFT spectrograms
-* STOI values
-* SNR values
-
-
-
+- V1 uses **two microphones** and implements feedforward adaptive noise reduction.
+- V2 adds a **third internal error microphone** for feedback/closed-loop ANC and FxNLMS.
+- The reference microphone should be described as an **Ambient Noise Reference**, not as capturing noise only.
+- The V1 MAX98357A is intended for the **speaker demonstration**; it is not the final headphone driver.
+- Exact ESP32-S3 GPIO assignments depend on the selected development board and should be finalized from its schematic/pinout.
+- Power values in the hardware report are design estimates and should be verified against the exact component datasheets and experimental measurements.
+- Do not upload passwords, API keys, access tokens, `.env` files containing secrets, or other confidential credentials to the repository.
