@@ -291,8 +291,11 @@ venv\Scripts\activate
 Install the required packages:
 
 ```bash
-pip install -r requirements.txt or run pip install numpy scipy pyroomacoustics soundfile librosa matplotlib pystoi
+ pip install numpy scipy pyroomacoustics soundfile librosa matplotlib pystoi
+pip install streamlit numpy matplotlib scipy
 ```
+``` to run the app
+```streamlit run app.py
 
 ---
 
