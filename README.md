@@ -625,7 +625,7 @@ To launch the GUI simulator representing the physical hardware box enclosure and
 
 ```bash
 hardware_ui.py  
-
+```
 ---
 
 ## 17. Results
