@@ -316,7 +316,7 @@ Different time windows can be selected from noise recordings to avoid evaluating
 | AMS1117-3.3 | 1 for V1 | 5 V to 3.3 V regulation |
 | Efficient Buck Regulator | Future | Preferred for final battery-powered design |
 | Internal Error MEMS Mic | 1 optional, V2 | Feedback microphone for FxNLMS |
-| CP2102/FTDI + 6-pin header | 1 | External programming interface |
+| FTDI + 6-pin header | 1 | External programming interface |
 
 ### Why ESP32-S3?
 
