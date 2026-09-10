@@ -1,3 +1,20 @@
+"""
+SmartAudio Tactical Hybrid AI-ANC Hardware UI Simulator (SA-ANC2026)
+--------------------------------------------------------------------
+This application simulates the physical hardware enclosure, monochromatic OLED 
+display, and real-time telemetry of an embedded ANC system. 
+
+Key Functionalities:
+- OLED Visualizer: Plots real-time anti-phase wave inversion, spectrum analysis, 
+  and DSP status (SNR gain, STOI speech intelligibility, latency).
+- TinyML Telemetry: Simulates asynchronous acoustic scene classification 
+  and confidence levels (e.g., Road Noise, Impulse Thump).
+- Transient Alerting: Triggers real-time hardware frame warnings when impulse 
+  hazards are detected.
+- Hardware Controls: Provides dynamic interactivity for ANC toggles, DSP bypass, 
+  volume knob adjustments, and acoustic profile switching.
+"""
+
 import tkinter as tk
 from tkinter import ttk
 import random
