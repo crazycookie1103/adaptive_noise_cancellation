@@ -78,6 +78,7 @@ The current V1 architecture is a **feedforward ANC configuration**. V2 extends t
 - USB-C 5 V power input
 - AMS1117-3.3 for the V1 prototype / efficient buck regulator recommended for the final battery-powered design
 - External CP2102/FTDI programming interface
+- Tkinter (for desktop GUI hardware simulation)
 
 ### Software / DSP
 
@@ -509,6 +510,7 @@ ADAPTIVE-ANC/
 │   ├── control_interface.py
 │   ├── data_prep.py
 │   ├── evaluate.py
+│   ├── hardware_ui.py
 │   ├── impulse.py
 │   ├── make_impulse.py
 │   ├── nlms.py
@@ -616,6 +618,13 @@ The demo can present:
 - STFT spectrograms
 - STOI values
 - SNR values
+
+### Hardware UI Simulator
+
+To launch the GUI simulator representing the physical hardware box enclosure and OLED interface:
+
+```bash
+hardware_ui.py  
 
 ---
 
