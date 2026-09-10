@@ -538,37 +538,38 @@ ADAPTIVE-ANC/
 
 ## 15. Installation
 
-```bash
-git clone <YOUR_REPOSITORY_URL>
-cd <YOUR_PROJECT_FOLDER>
-pip install -r requirements.txt
-```
+## Dependencies
 
-Alternatively, create a virtual environment first:
+The project uses the following Python libraries:
+
+* **NumPy** — numerical operations on audio signals
+* **SciPy** — signal processing and kurtosis calculation
+* **SoundFile** — reading and writing WAV/FLAC files
+* **Pystoi** — STOI speech intelligibility measurement
+* **Matplotlib** — spectrogram visualization
+
+## Environment Setup
+
+Create a virtual environment:
 
 ```bash
 python -m venv venv
 ```
 
-On Windows:
+Activate it on Windows:
 
 ```bash
 venv\Scripts\activate
 ```
 
-Install the required Python packages:
+Install the required packages:
 
 ```bash
-pip install -r requirements.txt
-```
-
-If the interactive demo is enabled:
-
-```bash
-pip install streamlit
+pip install -r requirements.txt or run pip install numpy scipy pyroomacoustics soundfile librosa matplotlib pystoi
 ```
 
 ---
+
 
 ## 16. Run
 
