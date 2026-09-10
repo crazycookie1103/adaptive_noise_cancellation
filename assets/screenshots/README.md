@@ -1,4 +1,4 @@
-Here it is with **only formatting cleaned up**—no content added or changed:
+
 
 # ADAPTIVE NOISE CANCELLATION
 
